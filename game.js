@@ -18,7 +18,7 @@ const meteorImg = new Image();
 meteorImg.src = './meteor.png';
 
 // ====== Easy to edit meteor size here =======
-const METEOR_HEIGHT = 64;  // Change this value to resize meteors easily
+const METEOR_HEIGHT = 128;  // Change this value to resize meteors easily
 // ============================================
 
 const dino = {
@@ -122,7 +122,7 @@ function pixelPerfectCollision(dino, meteor, dinoImg, meteorImg) {
 function update(delta) {
   if (gameOver) return;
 
-  distance += delta * 0.1;
+  distance += delta * 0.08;
   updateScoreDisplay();
 
   const elapsed = performance.now() - startTime;
