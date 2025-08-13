@@ -1,22 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dino Bird Hunt</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Dino Bird Hunt</title>
+
+  <link rel="stylesheet" href="style.css" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- iOS meta tags for home screen -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dino Bird Hunt" />
+  
+  <!-- iOS icons -->
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <!-- Theme color -->
+  <meta name="theme-color" content="#6a9955" />
 </head>
-<body>
-<div id="ui">
-  Room: <span id="roomNumber">1</span> | Birds Left: <span id="birdsLeft">0</span> | Hits Left: <span id="hitsLeft">3</span>
-</div>
-<canvas id="gameCanvas" width="800" height="450"></canvas>
-
-<div id="messageBox">
-  <div id="messageText"></div>
-  <button id="confirmBtn">Restart</button>
-</div>
-
-<script src="game.js"></script>
-</body>
-</html>

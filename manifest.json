@@ -1,0 +1,20 @@
+{
+  "name": "Dino Bird Hunt",
+  "short_name": "DinoHunt",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#a0d8f7",
+  "theme_color": "#6a9955",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
