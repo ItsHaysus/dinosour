@@ -18,7 +18,7 @@ const meteorImg = new Image();
 meteorImg.src = './meteor.png';
 
 // ====== Easy to edit meteor size here =======
-const METEOR_HEIGHT = 64;  // Change this value to resize meteors easily
+const METEOR_HEIGHT = 128;  // Change this value to resize meteors easily
 // ============================================
 
 const dino = {
