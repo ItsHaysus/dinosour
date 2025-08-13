@@ -61,16 +61,6 @@ function spawnMeteor() {
   meteors.push({ x, y: -METEOR_HEIGHT, width: meteorWidth, height: METEOR_HEIGHT, speed: meteorSpeed });
 }
 
-function rectsOverlap(r1, r2) {
-  return !(
-    r2.x > r1.x + r1.width ||
-    r2.x + r2.width < r1.x ||
-    r2.y > r1.y + r1.height ||
-    r2.y + r2.height < r1.y
-  );
-}
-
-// Pixel-perfect collision detection
 function pixelPerfectCollision(dino, meteor, dinoImg, meteorImg) {
   // Calculate intersection rectangle
   const x1 = Math.max(dino.x, meteor.x);
@@ -83,6 +73,8 @@ function pixelPerfectCollision(dino, meteor, dinoImg, meteorImg) {
   const width = Math.floor(x2 - x1);
   const height = Math.floor(y2 - y1);
 
+  if (width <= 0 || height <= 0) return false;
+
   // Create offscreen canvases
   const dinoCanvas = document.createElement('canvas');
   dinoCanvas.width = width;
@@ -94,16 +86,25 @@ function pixelPerfectCollision(dino, meteor, dinoImg, meteorImg) {
   meteorCanvas.height = height;
   const meteorCtx = meteorCanvas.getContext('2d');
 
-  // Draw overlapping parts onto canvases
+  // Draw overlapping parts onto canvases using original image sizes for source cropping
+  dinoCtx.clearRect(0, 0, width, height);
+  meteorCtx.clearRect(0, 0, width, height);
+
   dinoCtx.drawImage(
     dinoImg,
-    x1 - dino.x, y1 - dino.y, width, height,
+    ((x1 - dino.x) / dino.width) * dinoImg.naturalWidth,
+    ((y1 - dino.y) / dino.height) * dinoImg.naturalHeight,
+    (width / dino.width) * dinoImg.naturalWidth,
+    (height / dino.height) * dinoImg.naturalHeight,
     0, 0, width, height
   );
 
   meteorCtx.drawImage(
     meteorImg,
-    x1 - meteor.x, y1 - meteor.y, width, height,
+    ((x1 - meteor.x) / meteor.width) * meteorImg.naturalWidth,
+    ((y1 - meteor.y) / meteor.height) * meteorImg.naturalHeight,
+    (width / meteor.width) * meteorImg.naturalWidth,
+    (height / meteor.height) * meteorImg.naturalHeight,
     0, 0, width, height
   );
 
@@ -122,7 +123,7 @@ function pixelPerfectCollision(dino, meteor, dinoImg, meteorImg) {
 function update(delta) {
   if (gameOver) return;
 
-  distance += delta * 0.08;
+  distance += delta * 0.1;
   updateScoreDisplay();
 
   const elapsed = performance.now() - startTime;
