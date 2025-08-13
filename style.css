@@ -1,0 +1,46 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #a0d8f7;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none;
+}
+#gameCanvas {
+  background: #6a9955;
+  display: block;
+  margin: 0 auto;
+  border: 4px solid #3b5120;
+}
+#ui {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #222;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 white;
+}
+#messageBox {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255,255,255,0.95);
+  border: 3px solid #3b5120;
+  padding: 20px 40px;
+  font-size: 22px;
+  font-weight: bold;
+  display: none;
+  z-index: 10;
+}
+#messageBox button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  background: #3b5120;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+}
