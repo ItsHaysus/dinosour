@@ -17,11 +17,15 @@ dinoImg.src = './dinosaur.png';
 const meteorImg = new Image();
 meteorImg.src = './meteor.png';
 
+// ====== Easy to edit meteor size here =======
+const METEOR_HEIGHT = 64;  // Change this value to resize meteors easily
+// ============================================
+
 const dino = {
   x: 0,
   y: 0,
-  width: 64,
-  height: 64,
+  width: 128,  // bigger dinosaur width
+  height: 128, // bigger dinosaur height
   speedX: 10,
 };
 
@@ -34,9 +38,11 @@ let meteorSpeed = 3;
 let difficultyIncreaseTime = 60000; // 1 minute
 let startTime = null;
 
-// Place dino initially at bottom center
+let meteorAspectRatio = 1; // default aspect ratio for meteors
+
 function resetGame() {
   distance = 0;
+  updateScoreDisplay(); // immediately reset score display on restart
   meteors = [];
   gameOver = false;
   meteorInterval = 1500;
@@ -45,12 +51,14 @@ function resetGame() {
   dino.x = width / 2 - dino.width / 2;
   dino.y = height - dino.height - 20;
   lastMeteorTime = 0;
+  hideRestartPrompt();
   requestAnimationFrame(gameLoop);
 }
 
 function spawnMeteor() {
-  const x = Math.random() * (width - 48);
-  meteors.push({ x, y: -48, width: 48, height: 48, speed: meteorSpeed });
+  const meteorWidth = METEOR_HEIGHT * meteorAspectRatio;
+  const x = Math.random() * (width - meteorWidth);
+  meteors.push({ x, y: -METEOR_HEIGHT, width: meteorWidth, height: METEOR_HEIGHT, speed: meteorSpeed });
 }
 
 function rectsOverlap(r1, r2) {
@@ -66,6 +74,7 @@ function update(delta) {
   if (gameOver) return;
 
   distance += delta * 0.1;
+  updateScoreDisplay();
 
   // Increase difficulty every 1 minute
   const elapsed = performance.now() - startTime;
@@ -75,46 +84,38 @@ function update(delta) {
     meteorInterval = Math.max(400, meteorInterval - 200);
   }
 
-  // Spawn meteors
   if (performance.now() - lastMeteorTime > meteorInterval) {
     spawnMeteor();
     lastMeteorTime = performance.now();
   }
 
-  // Update meteors position
   meteors.forEach(m => {
     m.y += m.speed;
   });
 
-  // Remove meteors out of screen
   meteors = meteors.filter(m => m.y < height + 50);
 
-  // Check collision
   for (const m of meteors) {
     if (rectsOverlap(dino, m)) {
       gameOver = true;
-      setTimeout(() => {
-        if (confirm(`Game Over!\nDistance traveled: ${Math.floor(distance)}\nRestart?`)) {
-          resetGame();
-        }
-      }, 100);
+      showRestartPrompt(`Game Over!\nDistance traveled: ${Math.floor(distance)}`);
       break;
     }
   }
 }
 
 function draw() {
-  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#006400';
+  ctx.fillRect(0, 0, width, height);
 
-  // Draw dinosaur
   ctx.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
 
-  // Draw meteors
   meteors.forEach(m => {
     ctx.drawImage(meteorImg, m.x, m.y, m.width, m.height);
   });
+}
 
-  // Update score display
+function updateScoreDisplay() {
   document.getElementById('score').innerText = `Distance: ${Math.floor(distance)}`;
 }
 
@@ -132,7 +133,6 @@ function gameLoop(timestamp = 0) {
   }
 }
 
-// Control dino horizontal movement on touch drag
 let dragging = false;
 let dragX = 0;
 canvas.addEventListener('touchstart', e => {
@@ -153,11 +153,34 @@ canvas.addEventListener('touchend', e => {
   dragging = false;
 });
 
-// Start game after images loaded
-let imagesLoaded = 0;
-[dinoImg, meteorImg].forEach(img => {
-  img.onload = () => {
-    imagesLoaded++;
-    if (imagesLoaded === 2) resetGame();
-  };
+const restartPrompt = document.getElementById('restartPrompt');
+const restartMessage = document.getElementById('restartMessage');
+const restartBtn = document.getElementById('restartBtn');
+
+function showRestartPrompt(message) {
+  restartMessage.textContent = message;
+  restartPrompt.style.display = 'block';
+}
+
+function hideRestartPrompt() {
+  restartPrompt.style.display = 'none';
+}
+
+restartBtn.addEventListener('click', () => {
+  hideRestartPrompt();
+  resetGame();
 });
+
+let imagesLoaded = 0;
+dinoImg.onload = () => {
+  imagesLoaded++;
+  if (imagesLoaded === 2) resetGame();
+};
+dinoImg.onerror = () => console.error('Failed to load dinosaur.png');
+
+meteorImg.onload = () => {
+  meteorAspectRatio = meteorImg.naturalWidth / meteorImg.naturalHeight;
+  imagesLoaded++;
+  if (imagesLoaded === 2) resetGame();
+};
+meteorImg.onerror = () => console.error('Failed to load meteor.png');

@@ -20,11 +20,41 @@
       font-family: monospace; font-size: 24px; user-select: none;
       z-index: 10;
     }
+    #restartPrompt {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      font-family: monospace;
+      font-size: 24px;
+      text-align: center;
+      padding-top: 40vh;
+      z-index: 20;
+    }
+    #restartBtn {
+      margin-top: 20px;
+      font-size: 24px;
+      padding: 10px 30px;
+      border: none;
+      border-radius: 8px;
+      background: #28a745;
+      color: white;
+      cursor: pointer;
+    }
+    #restartBtn:active {
+      background: #218838;
+    }
   </style>
 </head>
 <body>
   <div id="score">Distance: 0</div>
   <canvas id="game"></canvas>
+
+  <div id="restartPrompt">
+    <p id="restartMessage"></p>
+    <button id="restartBtn">Restart</button>
+  </div>
 
   <script src="game.js"></script>
 </body>
