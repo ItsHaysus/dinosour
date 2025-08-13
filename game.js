@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // All your existing game.js code goes here
-
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   canvas.width = 800;
@@ -14,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let obstacles = [];
   let gameOver = false;
 
+  // Control obstacle spawn interval (decreases to spawn more frequently)
+  let obstacleInterval = 90;
+  let obstacleTimer = 0;
+
   const dino = {
     x: 50,
     y: 150,
@@ -26,19 +28,29 @@ document.addEventListener('DOMContentLoaded', () => {
     jumping: false,
   };
 
-  const keys = {};
-
-  document.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    if ((e.code === 'Space' || e.code === 'ArrowUp') && dino.grounded && !gameOver) {
+  function jump() {
+    if (!gameOver && dino.grounded) {
       dino.dy = dino.jumpForce;
       dino.grounded = false;
       dino.jumping = true;
     }
+  }
+
+  // Jump on keyboard (space/up)
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+      jump();
+    }
   });
 
-  document.addEventListener('keyup', (e) => {
-    keys[e.code] = false;
+  // Jump on screen tap or mouse click
+  document.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    jump();
+  }, { passive: false });
+
+  document.addEventListener('mousedown', () => {
+    jump();
   });
 
   function createObstacle() {
@@ -51,14 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  let obstacleTimer = 0;
-  const obstacleInterval = 90;
-
   function resetGame() {
     distance = 0;
     obstacles = [];
     dino.y = 150;
     dino.dy = 0;
+    gameSpeed = 5;
+    obstacleInterval = 90;
+    obstacleTimer = 0;
     gameOver = false;
     document.getElementById('restart-btn').style.display = 'none';
     loop();
@@ -91,13 +103,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Draw dino
     ctx.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
 
-    // Obstacles
+    // Increase difficulty every 100 distance
+    const difficultyLevel = Math.floor(distance / 100);
+    gameSpeed = 5 + difficultyLevel * 1.5;
+    obstacleInterval = Math.max(30, 90 - difficultyLevel * 10);
+
+    // Obstacles spawning
     obstacleTimer++;
     if (obstacleTimer > obstacleInterval) {
       createObstacle();
       obstacleTimer = 0;
     }
 
+    // Update and draw obstacles
     for (let i = 0; i < obstacles.length; i++) {
       const obs = obstacles[i];
       obs.x -= gameSpeed;
