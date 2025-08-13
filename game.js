@@ -1,156 +1,133 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = 800;
+canvas.height = 200;
 
-const width = canvas.width;
-const height = canvas.height;
+const dinoImg = new Image();
+dinoImg.src = 'dinosaur.png';
 
-let keys = {};
-let touchX = null;
-let touchY = null;
+let distance = 0;
+let gameSpeed = 5;
+let obstacles = [];
+let gameOver = false;
 
-// Game state
-let score = 0;
-let enemiesLeft = 0;
-let hitsLeft = 3;
-
-const dinosaur = {
-  x: width / 2 - 20,
-  y: height - 80,
-  width: 40,
-  height: 40,
-  speed: 4,
-  color: "#228B22",
+const dino = {
+  x: 50,
+  y: 150,
+  width: 50,
+  height: 50,
+  dy: 0,
+  gravity: 1,
+  jumpForce: -15,
+  grounded: false,
+  jumping: false,
 };
 
-class Bird {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.width = 30;
-    this.height = 20;
-    this.speed = 2;
-    this.direction = 1;
-    this.projectiles = [];
-    this.shootCooldown = 0;
-    this.color = "#555";
+const keys = {};
+
+document.addEventListener('keydown', (e) => {
+  keys[e.code] = true;
+  if ((e.code === 'Space' || e.code === 'ArrowUp') && dino.grounded && !gameOver) {
+    dino.dy = dino.jumpForce;
+    dino.grounded = false;
+    dino.jumping = true;
   }
-  update() {
-    this.x += this.speed * this.direction;
-    if (this.x <= 0 || this.x + this.width >= width) {
-      this.direction *= -1;
+});
+
+document.addEventListener('keyup', (e) => {
+  keys[e.code] = false;
+});
+
+function createObstacle() {
+  const height = 30 + Math.random() * 20;
+  obstacles.push({
+    x: canvas.width,
+    y: canvas.height - height,
+    width: 20,
+    height: height,
+  });
+}
+
+let obstacleTimer = 0;
+const obstacleInterval = 90;
+
+function resetGame() {
+  distance = 0;
+  obstacles = [];
+  dino.y = 150;
+  dino.dy = 0;
+  gameOver = false;
+  document.getElementById('restart-btn').style.display = 'none';
+  loop();
+}
+
+document.getElementById('restart-btn').addEventListener('click', () => {
+  resetGame();
+});
+
+function loop() {
+  if (gameOver) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Ground
+  ctx.fillStyle = '#555';
+  ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+  // Dino physics
+  dino.dy += dino.gravity;
+  dino.y += dino.dy;
+
+  if (dino.y + dino.height >= canvas.height - 20) {
+    dino.y = canvas.height - 20 - dino.height;
+    dino.dy = 0;
+    dino.grounded = true;
+    dino.jumping = false;
+  }
+
+  // Draw dino
+  ctx.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
+
+  // Obstacles
+  obstacleTimer++;
+  if (obstacleTimer > obstacleInterval) {
+    createObstacle();
+    obstacleTimer = 0;
+  }
+
+  for (let i = 0; i < obstacles.length; i++) {
+    const obs = obstacles[i];
+    obs.x -= gameSpeed;
+
+    ctx.fillStyle = '#333';
+    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+    // Collision detection
+    if (
+      dino.x < obs.x + obs.width &&
+      dino.x + dino.width > obs.x &&
+      dino.y < obs.y + obs.height &&
+      dino.y + dino.height > obs.y
+    ) {
+      gameOver = true;
+      document.getElementById('restart-btn').style.display = 'block';
     }
-    if (this.shootCooldown > 0) this.shootCooldown--;
-    else {
-      this.shoot();
-      this.shootCooldown = 100; // cooldown frames
-    }
-    this.projectiles.forEach((p, i) => {
-      p.update();
-      if (p.y > height) {
-        this.projectiles.splice(i, 1);
-      }
-    });
-  }
-  shoot() {
-    this.projectiles.push(new Projectile(this.x + this.width / 2, this.y + this.height));
-  }
-  draw() {
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.ellipse(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#222";
-    this.projectiles.forEach(p => p.draw());
-  }
-}
 
-class Projectile {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.radius = 5;
-    this.speed = 6;
-    this.color = "black";
-  }
-  update() {
-    this.y += this.speed;
-  }
-  draw() {
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-// Enemy array
-let birds = [];
-const enemiesPerRoom = 5;
-
-// Initialize new room
-function setupRoom() {
-  birds = [];
-  hitsLeft = 3;
-  enemiesLeft = enemiesPerRoom;
-  for (let i = 0; i < enemiesPerRoom; i++) {
-    const x = Math.random() * (width - 30);
-    const y = 50 + Math.random() * 100;
-    birds.push(new Bird(x, y));
-  }
-  updateUI();
-}
-
-// Collision helpers
-function rectsCollide(r1, r2) {
-  return !(r2.x > r1.x + r1.width ||
-           r2.x + r2.width < r1.x ||
-           r2.y > r1.y + r1.height ||
-           r2.y + r2.height < r1.y);
-}
-
-function circleRectCollision(circle, rect) {
-  let distX = Math.abs(circle.x - rect.x - rect.width / 2);
-  let distY = Math.abs(circle.y - rect.y - rect.height / 2);
-
-  if (distX > (rect.width / 2 + circle.radius)) return false;
-  if (distY > (rect.height / 2 + circle.radius)) return false;
-
-  if (distX <= (rect.width / 2)) return true;
-  if (distY <= (rect.height / 2)) return true;
-
-  let dx = distX - rect.width / 2;
-  let dy = distY - rect.height / 2;
-  return (dx * dx + dy * dy <= (circle.radius * circle.radius));
-}
-
-// Update UI
-function updateUI() {
-  document.getElementById("score").textContent = score;
-  document.getElementById("enemiesLeft").textContent = enemiesLeft;
-  document.getElementById("hitsLeft").textContent = hitsLeft;
-}
-
-// Game loop
-function update() {
-  // Move dinosaur
-  if (keys["ArrowLeft"] && dinosaur.x > 0) dinosaur.x -= dinosaur.speed;
-  if (keys["ArrowRight"] && dinosaur.x + dinosaur.width < width) dinosaur.x += dinosaur.speed;
-  if (keys["ArrowUp"] && dinosaur.y > height / 2) dinosaur.y -= dinosaur.speed;
-  if (keys["ArrowDown"] && dinosaur.y + dinosaur.height < height) dinosaur.y += dinosaur.speed;
-
-  // Touch move (simple follow)
-  if (touchX !== null && touchY !== null) {
-    let dx = touchX - (dinosaur.x + dinosaur.width / 2);
-    let dy = touchY - (dinosaur.y + dinosaur.height / 2);
-    let dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > dinosaur.speed) {
-      dinosaur.x += (dx / dist) * dinosaur.speed;
-      dinosaur.y += (dy / dist) * dinosaur.speed;
+    // Remove off-screen obstacles
+    if (obs.x + obs.width < 0) {
+      obstacles.splice(i, 1);
+      i--;
     }
   }
 
-  // Update birds and their projectiles
-  birds.forEach((bird, bIndex) => {
-    bird.update();
+  // Update score/distance
+  distance += 0.1;
+  document.getElementById('score').textContent = `Distance: ${Math.floor(distance)}`;
 
-    // Ch
+  requestAnimationFrame(loop);
+}
+
+// Start the game once the dino image is loaded
+dinoImg.onload = () => {
+  loop();
+};

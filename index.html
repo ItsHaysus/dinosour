@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-<title>Dino Bird Hunt</title>
-<link rel="manifest" href="manifest.json" />
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dino Runner PWA</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div id="game-container">
-  <canvas id="game" width="480" height="640"></canvas>
-  <div id="ui">
-    <button id="restartBtn">Restart</button>
-    <div>Rooms Cleared: <span id="score">0</span></div>
-    <div>Enemies Left: <span id="enemiesLeft">0</span></div>
-    <div>Hits Left: <span id="hitsLeft">3</span></div>
+  <div id="game-container">
+    <canvas id="game"></canvas>
+    <div id="score">Distance: 0</div>
+    <button id="restart-btn" style="display:none;">Restart</button>
   </div>
-</div>
 
-<script src="game.js"></script>
-<script src="sw-register.js"></script>
+  <script src="game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
 </body>
 </html>

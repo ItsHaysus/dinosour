@@ -1,10 +1,10 @@
 {
-  "name": "Dino Bird Hunt",
-  "short_name": "DinoHunt",
-  "start_url": ".",
+  "name": "Dino Runner",
+  "short_name": "DinoRun",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#87ceeb",
-  "theme_color": "#6b8e23",
+  "background_color": "#70c5ce",
+  "theme_color": "#70c5ce",
   "icons": [
     {
       "src": "icon-192.png",
