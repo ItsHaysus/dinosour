@@ -2,23 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dino Runner PWA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Dino Meteor Dodge</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    html, body {
+      margin: 0; padding: 0; overflow: hidden; height: 100%; background: #222;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: linear-gradient(to top, #006400, #90ee90);
+    }
+    #score {
+      position: fixed; top: 10px; left: 10px; color: white;
+      font-family: monospace; font-size: 24px; user-select: none;
+      z-index: 10;
+    }
+  </style>
 </head>
 <body>
-  <div id="game-container">
-    <canvas id="game"></canvas>
-    <div id="score">Distance: 0</div>
-    <button id="restart-btn" style="display:none;">Restart</button>
-  </div>
+  <div id="score">Distance: 0</div>
+  <canvas id="game"></canvas>
 
   <script src="game.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
-  </script>
 </body>
 </html>

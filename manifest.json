@@ -1,10 +1,10 @@
 {
-  "name": "Dino Runner",
-  "short_name": "DinoRun",
-  "start_url": "./index.html",
+  "name": "Dino Meteor Dodge",
+  "short_name": "DinoDodge",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "#70c5ce",
-  "theme_color": "#70c5ce",
+  "background_color": "#222222",
+  "theme_color": "#006400",
   "icons": [
     {
       "src": "icon-192.png",
