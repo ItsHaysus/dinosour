@@ -21,6 +21,10 @@ meteorImg.src = './meteor.png';
 const METEOR_HEIGHT = 128;  // Change this value to resize meteors easily
 // ============================================
 
+// ====== Hitbox margin for smaller collision box =======
+const HITBOX_MARGIN = 15;  // pixels to shrink hitbox on all sides
+// ======================================================
+
 const dino = {
   x: 0,
   y: 0,
@@ -73,7 +77,7 @@ function rectsOverlap(r1, r2) {
 function update(delta) {
   if (gameOver) return;
 
-  distance += delta * 0.1;
+  distance += delta * 0.05;
   updateScoreDisplay();
 
   // Increase difficulty every 1 minute
@@ -96,7 +100,21 @@ function update(delta) {
   meteors = meteors.filter(m => m.y < height + 50);
 
   for (const m of meteors) {
-    if (rectsOverlap(dino, m)) {
+    const dinoHitbox = {
+      x: dino.x + HITBOX_MARGIN,
+      y: dino.y + HITBOX_MARGIN,
+      width: dino.width - HITBOX_MARGIN * 2,
+      height: dino.height - HITBOX_MARGIN * 2,
+    };
+
+    const meteorHitbox = {
+      x: m.x + HITBOX_MARGIN,
+      y: m.y + HITBOX_MARGIN,
+      width: m.width - HITBOX_MARGIN * 2,
+      height: m.height - HITBOX_MARGIN * 2,
+    };
+
+    if (rectsOverlap(dinoHitbox, meteorHitbox)) {
       gameOver = true;
       showRestartPrompt(`Game Over!\nDistance traveled: ${Math.floor(distance)}`);
       break;
