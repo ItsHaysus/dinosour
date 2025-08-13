@@ -1,272 +1,156 @@
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(err => {
-      console.log('Service Worker registration failed:', err);
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const width = canvas.width;
+const height = canvas.height;
+
+let keys = {};
+let touchX = null;
+let touchY = null;
+
+// Game state
+let score = 0;
+let enemiesLeft = 0;
+let hitsLeft = 3;
+
+const dinosaur = {
+  x: width / 2 - 20,
+  y: height - 80,
+  width: 40,
+  height: 40,
+  speed: 4,
+  color: "#228B22",
+};
+
+class Bird {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.width = 30;
+    this.height = 20;
+    this.speed = 2;
+    this.direction = 1;
+    this.projectiles = [];
+    this.shootCooldown = 0;
+    this.color = "#555";
+  }
+  update() {
+    this.x += this.speed * this.direction;
+    if (this.x <= 0 || this.x + this.width >= width) {
+      this.direction *= -1;
+    }
+    if (this.shootCooldown > 0) this.shootCooldown--;
+    else {
+      this.shoot();
+      this.shootCooldown = 100; // cooldown frames
+    }
+    this.projectiles.forEach((p, i) => {
+      p.update();
+      if (p.y > height) {
+        this.projectiles.splice(i, 1);
+      }
     });
-  });
+  }
+  shoot() {
+    this.projectiles.push(new Projectile(this.x + this.width / 2, this.y + this.height));
+  }
+  draw() {
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.ellipse(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#222";
+    this.projectiles.forEach(p => p.draw());
+  }
 }
-(() => {
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  const uiRoom = document.getElementById('roomNumber');
-  const uiBirdsLeft = document.getElementById('birdsLeft');
-  const uiHitsLeft = document.getElementById('hitsLeft');
-  const messageBox = document.getElementById('messageBox');
-  const messageText = document.getElementById('messageText');
-  const confirmBtn = document.getElementById('confirmBtn');
 
-  const WIDTH = canvas.width;
-  const HEIGHT = canvas.height;
+class Projectile {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 5;
+    this.speed = 6;
+    this.color = "black";
+  }
+  update() {
+    this.y += this.speed;
+  }
+  draw() {
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
 
-  // Game variables
-  let room = 1;
-  let birdsToEat = 5;
-  let birds = [];
-  let hitsLeft = 3;
-  let gameOver = false;
+// Enemy array
+let birds = [];
+const enemiesPerRoom = 5;
 
-  // Dinosaur player
-  const dino = {
-    x: WIDTH / 2,
-    y: HEIGHT - 60,
-    width: 60,
-    height: 60,
-    speed: 5,
-    color: '#557722',
-    dx: 0,
-    dy: 0,
-    draw() {
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.ellipse(this.x, this.y, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
+// Initialize new room
+function setupRoom() {
+  birds = [];
+  hitsLeft = 3;
+  enemiesLeft = enemiesPerRoom;
+  for (let i = 0; i < enemiesPerRoom; i++) {
+    const x = Math.random() * (width - 30);
+    const y = 50 + Math.random() * 100;
+    birds.push(new Bird(x, y));
+  }
+  updateUI();
+}
 
-      // Head
-      ctx.beginPath();
-      ctx.ellipse(this.x + this.width/2, this.y - 10, 15, 20, 0, 0, Math.PI * 2);
-      ctx.fill();
+// Collision helpers
+function rectsCollide(r1, r2) {
+  return !(r2.x > r1.x + r1.width ||
+           r2.x + r2.width < r1.x ||
+           r2.y > r1.y + r1.height ||
+           r2.y + r2.height < r1.y);
+}
 
-      // Tail
-      ctx.beginPath();
-      ctx.moveTo(this.x - this.width/2, this.y);
-      ctx.lineTo(this.x - this.width/2 - 25, this.y + 15);
-      ctx.lineTo(this.x - this.width/2 - 10, this.y + 10);
-      ctx.closePath();
-      ctx.fill();
-    },
-    update() {
-      this.x += this.dx;
-      this.y += this.dy;
+function circleRectCollision(circle, rect) {
+  let distX = Math.abs(circle.x - rect.x - rect.width / 2);
+  let distY = Math.abs(circle.y - rect.y - rect.height / 2);
 
-      // Keep inside canvas
-      if (this.x < this.width/2) this.x = this.width/2;
-      if (this.x > WIDTH - this.width/2) this.x = WIDTH - this.width/2;
-      if (this.y < this.height/2) this.y = this.height/2;
-      if (this.y > HEIGHT - this.height/2) this.y = HEIGHT - this.height/2;
-    },
-    rect() {
-      return {
-        left: this.x - this.width/2,
-        right: this.x + this.width/2,
-        top: this.y - this.height/2,
-        bottom: this.y + this.height/2,
-      };
-    }
-  };
+  if (distX > (rect.width / 2 + circle.radius)) return false;
+  if (distY > (rect.height / 2 + circle.radius)) return false;
 
-  // Birds
-  class Bird {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-      this.size = 30;
-      this.color = '#aa2233';
-      this.speed = 2 + Math.random() * 2;
-      this.direction = Math.random() < 0.5 ? 1 : -1;
-      this.alive = true;
-      this.attackCooldown = 0;
-      this.state = 'patrol';
-      this.attackSpeed = 5;
-      this.attackTargetX = null;
-      this.attackTargetY = null;
-    }
+  if (distX <= (rect.width / 2)) return true;
+  if (distY <= (rect.height / 2)) return true;
 
-    draw() {
-      if (!this.alive) return;
+  let dx = distX - rect.width / 2;
+  let dy = distY - rect.height / 2;
+  return (dx * dx + dy * dy <= (circle.radius * circle.radius));
+}
 
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.ellipse(this.x, this.y, this.size/2, this.size/3, 0, 0, Math.PI * 2);
-      ctx.fill();
+// Update UI
+function updateUI() {
+  document.getElementById("score").textContent = score;
+  document.getElementById("enemiesLeft").textContent = enemiesLeft;
+  document.getElementById("hitsLeft").textContent = hitsLeft;
+}
 
-      ctx.beginPath();
-      ctx.moveTo(this.x, this.y);
-      ctx.lineTo(this.x + 15 * this.direction, this.y - 10);
-      ctx.lineTo(this.x + 15 * this.direction, this.y + 10);
-      ctx.closePath();
-      ctx.fill();
-    }
+// Game loop
+function update() {
+  // Move dinosaur
+  if (keys["ArrowLeft"] && dinosaur.x > 0) dinosaur.x -= dinosaur.speed;
+  if (keys["ArrowRight"] && dinosaur.x + dinosaur.width < width) dinosaur.x += dinosaur.speed;
+  if (keys["ArrowUp"] && dinosaur.y > height / 2) dinosaur.y -= dinosaur.speed;
+  if (keys["ArrowDown"] && dinosaur.y + dinosaur.height < height) dinosaur.y += dinosaur.speed;
 
-    update() {
-      if (!this.alive) return;
-
-      if(this.state === 'patrol') {
-        this.x += this.speed * this.direction;
-
-        if (this.x < this.size/2 || this.x > WIDTH - this.size/2) {
-          this.direction *= -1;
-        }
-
-        if (this.attackCooldown <= 0 && Math.random() < 0.01) {
-          this.state = 'attack';
-          this.attackTargetX = dino.x;
-          this.attackTargetY = dino.y;
-        } else {
-          this.attackCooldown--;
-        }
-      }
-      else if (this.state === 'attack') {
-        let dx = this.attackTargetX - this.x;
-        let dy = this.attackTargetY - this.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < this.attackSpeed || dist === 0) {
-          this.state = 'patrol';
-          this.attackCooldown = 100 + Math.floor(Math.random()*100);
-        } else {
-          this.x += this.attackSpeed * dx / dist;
-          this.y += this.attackSpeed * dy / dist;
-        }
-      }
-    }
-
-    rect() {
-      return {
-        left: this.x - this.size/2,
-        right: this.x + this.size/2,
-        top: this.y - this.size/3,
-        bottom: this.y + this.size/3,
-      };
+  // Touch move (simple follow)
+  if (touchX !== null && touchY !== null) {
+    let dx = touchX - (dinosaur.x + dinosaur.width / 2);
+    let dy = touchY - (dinosaur.y + dinosaur.height / 2);
+    let dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > dinosaur.speed) {
+      dinosaur.x += (dx / dist) * dinosaur.speed;
+      dinosaur.y += (dy / dist) * dinosaur.speed;
     }
   }
 
-  // Input
-  const keys = {};
-  window.addEventListener('keydown', e => {
-    keys[e.key.toLowerCase()] = true;
-  });
-  window.addEventListener('keyup', e => {
-    keys[e.key.toLowerCase()] = false;
-  });
+  // Update birds and their projectiles
+  birds.forEach((bird, bIndex) => {
+    bird.update();
 
-  // Helpers
-  function rectsOverlap(r1, r2) {
-    return !(r2.left > r1.right ||
-             r2.right < r1.left ||
-             r2.top > r1.bottom ||
-             r2.bottom < r1.top);
-  }
-
-  // Spawn birds for the room
-  function spawnBirds(count) {
-    birds = [];
-    for(let i = 0; i < count; i++) {
-      let x = 50 + Math.random() * (WIDTH - 100);
-      let y = 50 + Math.random() * (HEIGHT / 2 - 60);
-      birds.push(new Bird(x, y));
-    }
-  }
-
-  function resetGame() {
-    room = 1;
-    hitsLeft = 3;
-    birdsToEat = 5;
-    spawnBirds(birdsToEat);
-    updateUI();
-    gameOver = false;
-    messageBox.style.display = 'none';
-    dino.x = WIDTH / 2;
-    dino.y = HEIGHT - 60;
-  }
-
-  function nextRoom() {
-    room++;
-    birdsToEat = 5 + room * 2;
-    spawnBirds(birdsToEat);
-    updateUI();
-  }
-
-  function updateUI() {
-    uiRoom.textContent = room;
-    uiBirdsLeft.textContent = birdsToEat;
-    uiHitsLeft.textContent = hitsLeft;
-  }
-
-  function showMessage(text) {
-    messageText.textContent = text;
-    messageBox.style.display = 'block';
-  }
-
-  confirmBtn.addEventListener('click', () => {
-    resetGame();
-  });
-
-  // Game loop
-  function gameLoop() {
-    if (gameOver) {
-      requestAnimationFrame(gameLoop);
-      return;
-    }
-
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-    dino.dx = 0;
-    dino.dy = 0;
-    if (keys['arrowleft'] || keys['a']) dino.dx = -dino.speed;
-    if (keys['arrowright'] || keys['d']) dino.dx = dino.speed;
-    if (keys['arrowup'] || keys['w']) dino.dy = -dino.speed;
-    if (keys['arrowdown'] || keys['s']) dino.dy = dino.speed;
-    dino.update();
-
-    dino.draw();
-
-    birds.forEach(bird => {
-      bird.update();
-      bird.draw();
-    });
-
-    birds.forEach((bird) => {
-      if (!bird.alive) return;
-
-      if (rectsOverlap(dino.rect(), bird.rect())) {
-        bird.alive = false;
-        birdsToEat--;
-        updateUI();
-
-        if (birdsToEat <= 0) {
-          setTimeout(() => {
-            nextRoom();
-          }, 1000);
-        }
-      }
-    });
-
-    birds.forEach(bird => {
-      if (!bird.alive) return;
-      if (bird.state === 'attack' && rectsOverlap(dino.rect(), bird.rect())) {
-        bird.state = 'patrol';
-        bird.attackCooldown = 100;
-        hitsLeft--;
-        updateUI();
-        if (hitsLeft <= 0) {
-          gameOver = true;
-          showMessage(`You died in room ${room}!`);
-        }
-      }
-    });
-
-    requestAnimationFrame(gameLoop);
-  }
-
-  resetGame();
-  gameLoop();
-})();
+    // Ch
