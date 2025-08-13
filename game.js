@@ -22,7 +22,7 @@ const METEOR_HEIGHT = 128;  // Change this value to resize meteors easily
 // ============================================
 
 // ====== Hitbox margin for smaller collision box =======
-const HITBOX_MARGIN = 15;  // pixels to shrink hitbox on all sides
+const HITBOX_MARGIN = 0;  // pixels to shrink hitbox on all sides
 // ======================================================
 
 const dino = {
